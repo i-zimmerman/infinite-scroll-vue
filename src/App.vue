@@ -1,17 +1,22 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div>
+    <p>Left until draw</p>
+    <Timer />
+  </div>
+  <UserList />
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import UserList from "./components/UserList";
+import Timer from "./components/Timer";
 
 export default {
-  name: 'App',
+  name: "App",
   components: {
-    HelloWorld
-  }
-}
+    UserList,
+    Timer,
+  },
+};
 </script>
 
 <style>
@@ -21,6 +26,6 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  margin: 50px 300px;
 }
 </style>
