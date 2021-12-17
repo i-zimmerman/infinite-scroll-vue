@@ -1,24 +1,10 @@
 # infinite-scroll-vue
 
-## Project setup
-```
-yarn install
-```
+### Github pages: incoming
 
-### Compiles and hot-reloads for development
-```
-yarn serve
-```
+## Test task:
 
-### Compiles and minifies for production
-```
-yarn build
-```
-
-### Lints and fixes files
-```
-yarn lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+- fetch user data with infinite scroll
+- render data + styles from figma
+- implement countdown until this day's midnight
+- implement artificial 'time from signed up' behavior + interval time updates
