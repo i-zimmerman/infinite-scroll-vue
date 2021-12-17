@@ -17,7 +17,9 @@
         <div class="user-email">
           <p>{{ user.email }}</p>
         </div>
-        <div class="user-signed-up"></div>
+        <div class="user-signed-up">
+          <p>{{ user.signedUp.formattedTime }}</p>
+        </div>
       </li>
     </ul>
     <div v-if="isLoading">Loading...</div>
@@ -48,8 +50,66 @@
 <script>
 import axios from "axios";
 import debounce from "lodash/debounce";
+import format from "date-fns/format";
 
+const SECONDS_IN = {
+  YEAR: 31536000,
+  MONTH: 2592000,
+  DAY: 86400,
+  HOUR: 3600,
+  MINUTE: 60,
+};
 const MAX_USERS = 50;
+const THREE_MINUTES_MS = 180000;
+
+let signedUpTime = Date.now();
+
+const timeSince = (timeSinceSignedUp) => {
+  const secondsDiff = Math.floor((Date.now() - timeSinceSignedUp) / 1000);
+
+  let interval = secondsDiff / SECONDS_IN.YEAR;
+
+  if (interval > 1) {
+    return format(new Date(timeSinceSignedUp), "dd MMM yyyy");
+  }
+
+  interval = secondsDiff / SECONDS_IN.MONTH;
+  if (interval > 1) {
+    return format(new Date(timeSinceSignedUp), "dd MMM");
+  }
+
+  interval = secondsDiff / SECONDS_IN.DAY;
+  if (interval > 2) {
+    return format(new Date(timeSinceSignedUp), "dd MMM");
+  }
+
+  if (interval > 1 && interval < 2) {
+    return "yesterday";
+  }
+
+  interval = secondsDiff / SECONDS_IN.HOUR;
+  if (interval > 1) {
+    return Math.floor(interval) + "h ago";
+  }
+
+  interval = secondsDiff / SECONDS_IN.MINUTE;
+  if (interval > 1) {
+    return Math.floor(interval) + "m ago";
+  }
+
+  return "just now";
+};
+
+const signUpUsers = (users) => {
+  users.forEach((user) => {
+    user.signedUp = {
+      formattedTime: timeSince(signedUpTime),
+      timeMS: signedUpTime,
+    };
+    signedUpTime -= THREE_MINUTES_MS ** 1.2;
+  });
+  return users;
+};
 
 export default {
   data() {
@@ -66,8 +126,9 @@ export default {
       axios
         .get(`https://randomuser.me/api/?results=${this.offset}`)
         .then((response) => {
-          this.users = response.data.results;
-          this.total += response.data.results.length;
+          const usersList = signUpUsers(response.data.results);
+          this.users = usersList;
+          this.total += usersList.length;
         });
     },
     getNextUsers() {
@@ -85,10 +146,10 @@ export default {
             axios
               .get(`https://randomuser.me/api/?results=${this.offset}`)
               .then((response) => {
-                console.log(this.isLoading);
                 this.isLoading = false;
-                this.users = this.users.concat(response.data.results);
-                this.total += response.data.results.length;
+                const usersList = signUpUsers(response.data.results);
+                this.users = this.users.concat(usersList);
+                this.total += usersList.length;
 
                 const usersLeft = MAX_USERS - this.total;
                 this.offset = usersLeft > this.offset ? this.offset : usersLeft;
@@ -99,12 +160,31 @@ export default {
         }
       }, 450);
     },
+    updateUsersSignedInTime: function () {
+      setInterval(() => {
+        const updatedUsers = this.users.reduce((acc, user) => {
+          const timeDiffMs = Date.now() - user.signedUp.timeMS;
+          const timeFromSignedUp = Date.now() - timeDiffMs;
+          const updatedUser = {
+            ...user,
+            signedUp: {
+              formattedTime: timeSince(timeFromSignedUp),
+              timeMS: timeFromSignedUp,
+            },
+          };
+          return [...acc, updatedUser];
+        }, []);
+
+        this.users = updatedUsers;
+      }, 120000);
+    },
   },
   beforeMount() {
     this.getInitialUsers();
   },
   mounted() {
     this.getNextUsers();
+    this.updateUsersSignedInTime();
   },
   name: "UsersList",
 };
@@ -163,5 +243,11 @@ ul {
 
 .success-icon {
   margin-right: 18px;
+}
+
+.user-signed-up {
+  flex-grow: 1;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>
